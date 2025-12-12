@@ -4,375 +4,261 @@ A tmux-based task scheduling and monitoring tool with support for concurrent exe
 
 ## Features
 
-- 🚀 **Concurrent Execution**: Support for multiple tasks running simultaneously
-- 📊 **Real-time Monitoring**: Real-time task status and output viewing
-- 🛠️ **Resource Monitoring**: CPU, memory, and disk usage monitoring
-- 📝 **Log Management**: Automatic task output and log recording
-- 🔧 **Configuration Management**: Simple configuration file management
-- 📧 **Email Notifications**: Automatic email notifications when tasks complete (requires configuration)
+- 🚀 Concurrent execution of multiple tasks
+- 📊 Real-time monitoring and status viewing
+- 🛠️ System resource monitoring (CPU, memory, disk)
+- 📝 Automatic log management
+- 📧 Email notifications (optional)
+- 🔧 Simple configuration management
+
+## Quick Start
+
+### Step 1: Install
+
+```bash
+# Install from PyPI
+pip install lite-slurm
+
+# Or install from source
+git clone <repository-url>
+cd slurm-like-task-manager
+pip install -e .
+```
+
+**Requirements:** Python 3.7+ and tmux (install with `sudo apt-get install tmux` or `brew install tmux`)
+
+### Step 2: Initialize
+
+```bash
+task config init
+```
+
+### Step 3: Run Your First Task
+
+```bash
+# Run a task
+task run "My Task" "python my_script.py"
+
+# List tasks
+task list
+
+# Monitor task output
+task monitor <task_id>
+
+# Stop task
+task kill <task_id>
+
+# Clean a task
+task cleanup <task_id>
+```
+
+That's it! You're ready to use the task manager.
 
 ## Installation
+
+### From PyPI
+
+```bash
+pip install lite-slurm
+task config init
+```
+
+### From Source
+
+```bash
+git clone <repository-url>
+cd slurm-like-task-manager
+pip install -r requirements.txt
+pip install -e .
+task config init
+```
 
 ### System Requirements
 
 - Python 3.7+
-- tmux (required)
-
-### Check tmux
-
-Before installation, ensure tmux is installed on your system:
-
-```bash
-# Check if tmux is installed
-command -v tmux
-
-# If not installed, install tmux first
-# Ubuntu/Debian:
-sudo apt-get install tmux
-
-# CentOS/RHEL:
-sudo yum install tmux
-
-# macOS:
-brew install tmux
-```
-
-### Quick Installation
-
-```bash
-# Clone repository
-git clone <repository-url>
-cd task_manager
-
-# Run installation script
-chmod +x install.sh
-./install.sh
-```
-
-### Manual Installation
-
-```bash
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Install package
-pip install -e .
-
-# Initialize configuration
-task config init
-```
-
-### Install from PyPI
-
-```bash
-# Install from PyPI
-pip install lite-slrum
-
-# Initialize configuration
-task config init
-```
+- tmux (install: `sudo apt-get install tmux` / `brew install tmux`)
 
 ## Usage
 
 ### Basic Commands
 
 ```bash
-# Run new task
+# Run task
 task run "Task Name" "command to execute"
 
-# List all tasks
-task list
+# List tasks
+task list                          # All tasks
+task list --status running         # Filter by status
+task list --resources              # Show system resources
 
-# Monitor task output in real-time
-task monitor <task_id>
+# Monitor task
+task monitor <task_id>            # Real-time monitoring
+task monitor <task_id> --lines 100 # Show last 100 lines
 
 # Stop task
-task kill <task_id>
+task kill <task_id>               # Stop single task
+task kill <task_id1> <task_id2>   # Stop multiple tasks
+task kill --all                   # Stop all running tasks
+task kill <task_id> --force       # Force stop (immediate kill)
 
-# View task status
-task status <task_id>
+# View task info
+task status <task_id>             # Task status
+task output <task_id>             # Task output
+task logs <task_id>               # Task logs
 
-# View task output
-task output <task_id>
-
-# Clean up old tasks
-task cleanup
-
-# View help
-task -h
+# Cleanup
+task cleanup                      # Clean tasks older than 24h
+task cleanup 12                   # Clean tasks older than 12h
 ```
 
 ### Examples
 
 ```bash
-# Run a training task
+# Run training task
 task run "Model Training" "python train.py --epochs 100"
 
 # Run multiple tasks concurrently
-task run "Data Processing" "python process_data.py" &
-task run "Feature Extraction" "python extract_features.py" &
+task run "Data Processing" "python process_data.py"
+task run "Feature Extraction" "python extract_features.py"
 
-# Monitor running tasks
+# Monitor and manage
 task list --resources
-
-# Monitor specific task
 task monitor 00001
-
-# Stop all running tasks
-task kill --all
+task kill 00001 00002 00003       # Kill multiple tasks
 ```
 
 ## Configuration
 
-### Email Notifications
+### Email Notifications (Optional)
 
-To enable email notifications, you need to configure three files:
+To enable email notifications:
 
-#### 1. Email Configuration File
+1. **Create email config** (`~/.task_manager/config/email_config.json`):
+   ```json
+   {
+       "enabled": true,
+       "to_email": "your-email@example.com"
+   }
+   ```
 
-Create `~/.task_manager/config/email_config.json`:
+2. **Setup Google API credentials**:
+   - Get credentials from [Google Cloud Console](https://console.cloud.google.com/)
+   - Enable Gmail API and create OAuth 2.0 credentials
+   - Save as `~/.task_manager/config/credentials.json`
 
-```json
-{
-    "enabled": true,
-    "to_email": "your-email@example.com"
-}
-```
+3. **Get Gmail token**:
+   ```bash
+   task config google_api login
+   ```
 
-#### 2. Google API Credentials
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select existing one
-3. Enable Gmail API
-4. Create OAuth 2.0 credentials
-5. Download credentials file as `credentials.json`
-6. Place it in `~/.task_manager/config/credentials.json`
-
-#### 3. Gmail Token
-
-Use the following command to get the token:
-
+**Quick import** (if you have existing files):
 ```bash
-# Login via Google API to get token
-task config google_api login
-```
-
-#### Quick Import Method
-
-If you already have the configuration files:
-
-```bash
-# Import email configuration
-task config email ~/my_email_config.json
-
-# Import Gmail token
-task config token ~/my_token.json
-
-# Import Google API credentials
+task config email ~/email_config.json
+task config token ~/token.json
 task config google_api file ~/credentials.json
 ```
 
-### Configuration Management
+### Configuration Commands
 
 ```bash
-# Initialize configuration files
-task config init
-
-# Show current configuration
-task config show
-
-# Test email configuration
-task config test
-
-# Import email configuration
-task config email <config_file>
-
-# Import Gmail token
-task config token <token_file>
-
-# Setup Google API credentials
-task config google_api file <credentials_file>
-
-# Login via Google API
-task config google_api login
+task config init                  # Initialize config
+task config show                  # Show current config
+task config test                  # Test email config
+task config email <file>          # Import email config
+task config token <file>          # Import token
+task config google_api file <file> # Import credentials
+task config google_api login      # Login to get token
 ```
 
 ## Command Reference
 
-### Global Options
-
-- `-h, --help`: Show help information
-- `-v, --version`: Show version information
-
-### Commands
-
-#### `task run <name> <command> [priority] [max_retries]`
+### `task run <name> <command> [priority] [-r|--realtime]`
 
 Run new task.
 
-**Parameters:**
 - `name`: Task name
 - `command`: Command to execute
 - `priority`: Task priority (0-10, default 0)
-- `max_retries`: Maximum retry count (default 0)
+- `-r, --realtime`: Enable real-time unbuffered output
 
 **Examples:**
 ```bash
 task run "Train Model" "python train.py"
-task run "Important Task" "python important.py" 10
-task run "May Fail" "python unstable.py" 0 3
+task run "Important" "python script.py" 10
+task run -r "Stream Logs" "python long.py"
 ```
 
-#### `task list [options]`
+### `task kill <task_id> [task_id2] ... [--force] | --all [--force]`
 
-List all tasks.
+Stop task(s).
 
-**Options:**
-- `--status <status>`: Filter tasks by status
-- `--resources`: Show system resource usage
-
-**Examples:**
-```bash
-task list                    # List all tasks
-task list --status running   # Show only running tasks
-task list --resources        # Show tasks and resource info
-```
-
-#### `task kill <task_id> [--force] | task kill --all [--force]`
-
-Stop task.
-
-**Parameters:**
-- `task_id`: Task ID to stop
+- `task_id`: Task ID(s) to stop (can specify multiple)
 - `--all`: Stop all running tasks
-- `--force`: Force stop task
+- `--force`: Force kill immediately (without graceful shutdown)
 
 **Examples:**
 ```bash
-task kill 00001              # Stop task 00001
-task kill 00001 --force      # Force stop task 00001
-task kill --all              # Stop all running tasks
+task kill 00001
+task kill 00001 00002 00003
+task kill 00001 --force
+task kill --all
 ```
 
-#### `task monitor <task_id> [--lines N] [--refresh SECONDS]`
+### `task monitor <task_id> [--lines N] [--refresh SECONDS]`
 
 Real-time task monitoring.
 
-**Parameters:**
-- `task_id`: Task ID to monitor
-- `--lines N`: Show last N lines of output (default 50)
-- `--refresh S`: Refresh interval in seconds (default 2.0)
+- `--lines N`: Show last N lines (default: 50)
+- `--refresh S`: Refresh interval in seconds (default: 2.0)
+
+### `task list [--status <status>] [--resources]`
+
+List tasks.
+
+- `--status <status>`: Filter by status (pending, running, completed, failed, killed)
+- `--resources`: Show system resource usage
+
+### `task status <task_id>`
+
+View task status details.
+
+### `task output <task_id> [--lines N]`
+
+View task output (default: last 50 lines).
+
+### `task logs <task_id> [lines]`
+
+View task log file (default: last 100 lines).
+
+### `task cleanup [-t/--time hours] [task_id1] [task_id2] ...`
+
+Clean up tasks.
+
+- `-t, --time hours`: Clean tasks older than N hours (default: 24)
+- `task_id`: Clean specific task(s)
 
 **Examples:**
 ```bash
-task monitor 00001                    # Monitor task 00001
-task monitor 00001 --lines 100        # Show last 100 lines
-task monitor 00001 --refresh 1.0      # Refresh every second
+task cleanup                    # Clean tasks older than 24h
+task cleanup -t 48              # Clean tasks older than 48h
+task cleanup 00001 00002        # Clean specific tasks
 ```
 
-#### `task status <task_id>`
-
-View task status.
-
-**Parameters:**
-- `task_id`: Task ID to view status
-
-**Examples:**
-```bash
-task status 00001    # View status of task 00001
-```
-
-#### `task output <task_id> [--lines N]`
-
-View task output.
-
-**Parameters:**
-- `task_id`: Task ID to view output
-- `--lines N`: Show last N lines of output (default 50)
-
-**Examples:**
-```bash
-task output 00001              # View output of task 00001
-task output 00001 --lines 100  # Show last 100 lines
-```
-
-#### `task cleanup [hours]`
-
-Clean up completed tasks.
-
-**Parameters:**
-- `hours`: Clean up tasks completed more than specified hours ago (default 24)
-
-**Examples:**
-```bash
-task cleanup        # Clean up tasks older than 24 hours
-task cleanup 12     # Clean up tasks older than 12 hours
-task cleanup 0      # Clean up all completed tasks
-```
-
-#### `task logs <task_id> [lines]`
-
-View task logs.
-
-**Parameters:**
-- `task_id`: Task ID to view logs
-- `lines`: Show last N lines of logs (default 100)
-
-**Examples:**
-```bash
-task logs 00001        # View logs of task 00001
-task logs 00001 50     # Show last 50 lines
-```
-
-#### `task email <action>`
+### `task email <action>`
 
 Email notification management.
 
-**Actions:**
-- `enable`: Enable email notifications
-- `disable`: Disable email notifications
-- `show`: Show current email configuration
-- `test`: Test email sending
-
-**Examples:**
-```bash
-task email enable    # Enable email notifications
-task email disable   # Disable email notifications
-task email show      # View current configuration
-task email test      # Send test email
-```
-
-#### `task config <action> [file_path]`
-
-Configuration management.
-
-**Actions:**
-- `init`: Initialize configuration files
-- `email <config_file>`: Configure email settings
-- `token <token_file>`: Configure Gmail token
-- `google_api file <creds_file>`: Configure Google API credentials
-- `google_api login`: Login via Google API to get token
-- `show`: Show current configuration
-- `test`: Test email sending
-
-**Examples:**
-```bash
-task config init
-task config email ~/my_email_config.json
-task config token ~/my_token.json
-task config google_api file ~/credentials.json
-task config google_api login
-task config show
-```
+- `enable`: Enable notifications
+- `disable`: Disable notifications
+- `show`: Show current config
+- `test`: Send test email
 
 ## Task Status
 
-Tasks can have the following statuses:
-
 - `pending`: Waiting to start
-- `running`: Currently running
-- `completed`: Successfully completed
-- `failed`: Failed to complete
+- `running`: Currently executing
+- `completed`: Successfully finished
+- `failed`: Failed with error
 - `killed`: Manually stopped
 
 ## File Structure
@@ -382,61 +268,32 @@ Tasks can have the following statuses:
 ├── config/
 │   ├── email_config.json    # Email configuration
 │   ├── credentials.json     # Google API credentials
-│   └── token.json          # Gmail token
-├── logs/                   # Task log files
-│   ├── 00001.log
-│   └── 00002.log
-└── tasks.json              # Task database
-```
-
-## Uninstallation
-
-```bash
-# Run uninstall script
-chmod +x uninstall.sh
-./uninstall.sh
-
-# Or manually uninstall
-pip uninstall lite-slrum
-rm -rf ~/.task_manager
+│   └── token.json           # Gmail token
+├── logs/                    # Task log files
+│   └── <task_id>.log
+└── tasks.json               # Task database
 ```
 
 ## Troubleshooting
 
-### Common Issues
+- **tmux not found**: Install with `sudo apt-get install tmux` or `brew install tmux`
+- **Permission denied**: Check script execute permissions
+- **Email not working**: Verify Gmail API config and token validity
+- **Task not starting**: Check for tmux session name conflicts
 
-1. **tmux not found**: Install tmux using your package manager
-2. **Permission denied**: Make sure you have execute permissions for scripts
-3. **Email not working**: Check Gmail API configuration and token validity
-4. **Task not starting**: Check if tmux session name conflicts exist
+Logs location: `~/.task_manager/logs/<task_id>.log`
 
-### Log Files
+## Uninstallation
 
-- Task logs: `~/.task_manager/logs/<task_id>.log`
-- System logs: Check terminal output for error messages
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+```bash
+pip uninstall lite-slurm
+rm -rf ~/.task_manager
+```
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License
 
 ## Author
 
 Created by zheng
-
-## Changelog
-
-### v1.0.4 (2025-09-10)
-- Initial release
-- Basic task management functionality
-- tmux integration
-- Email notifications
-- Resource monitoring
-- Configuration management

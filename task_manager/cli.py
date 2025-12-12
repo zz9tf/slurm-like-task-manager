@@ -102,7 +102,7 @@ def show_help():
 
 def show_version():
     """Show version information"""
-    print("Task Manager v1.0.4")
+    print("Task Manager v1.0.5")
     print("A task scheduler and monitor based on tmux")
     print("Author: zheng")
     print("Build date: 2025-09-10")
@@ -291,11 +291,10 @@ def cmd_kill(manager: TaskManager):
     
     if len(sys.argv) < 3:
         print("❌ error: missing required parameters")
-        print("Usage: task kill <task_id> [--force] | task kill --all [--force]")
+        print("Usage: task kill <task_id> [task_id2] [task_id3] ... [--force] | task kill --all [--force]")
         print("Use 'task kill -h' to see detailed help")
         sys.exit(1)
     
-    task_id = sys.argv[2]
     force = "--force" in sys.argv
     all_tasks = "--all" in sys.argv
     
@@ -311,10 +310,29 @@ def cmd_kill(manager: TaskManager):
             else:
                 print(f"❌ stop task failed: {task['id']}")
     else:
-        if manager.stop_task(task_id, force):
-            print(f"✅ task stopped: {task_id}")
-        else:
-            print(f"❌ stop task failed: {task_id}")
+        # Parse all task IDs (skip options)
+        task_ids = []
+        for arg in sys.argv[2:]:
+            if arg not in ['--force']:
+                task_ids.append(arg)
+        
+        if not task_ids:
+            print("❌ error: no task IDs provided")
+            print("Usage: task kill <task_id> [task_id2] [task_id3] ... [--force]")
+            sys.exit(1)
+        
+        success_count = 0
+        failed_count = 0
+        for task_id in task_ids:
+            if manager.stop_task(task_id, force):
+                print(f"✅ task stopped: {task_id}")
+                success_count += 1
+            else:
+                print(f"❌ stop task failed: {task_id}")
+                failed_count += 1
+        
+        if len(task_ids) > 1:
+            print(f"\n📊 summary: {success_count} succeeded, {failed_count} failed")
 
 
 def cmd_monitor(manager: TaskManager):
@@ -665,22 +683,29 @@ def show_kill_help():
     print("Task Manager - Kill Command Help")
     print("=" * 50)
     print("")
-    print("Usage: task kill <task_id> [--force] | task kill --all [--force]")
+    print("Usage: task kill <task_id> [task_id2] [task_id3] ... [--force] | task kill --all [--force]")
     print("")
     print("Parameters:")
-    print("  task_id    Task ID to stop (required)")
+    print("  task_id    Task ID(s) to stop (required, can specify multiple)")
     print("  --all      Stop all running tasks")
     print("  --force    Force stop without graceful shutdown")
+    print("             Without --force: sends Ctrl+C first, then force kills if needed")
+    print("             With --force: immediately force kills the task (like kill -9)")
     print("")
     print("Examples:")
     print("  task kill task_123")
     print("  task kill task_123 --force")
+    print("  task kill task_123 task_124 task_125")
+    print("  task kill task_123 task_124 --force")
     print("  task kill --all")
     print("  task kill --all --force")
     print("")
     print("Notes:")
-    print("  - Use --force only when normal stop fails")
+    print("  - Without --force: gracefully stops task (sends Ctrl+C, waits 1s, then force kills if still running)")
+    print("  - With --force: immediately force kills the task without graceful shutdown")
+    print("  - Use --force when task is unresponsive or normal stop fails")
     print("  - --all option stops all running tasks")
+    print("  - Multiple task IDs can be specified to stop multiple tasks at once")
 
 
 def show_monitor_help():
