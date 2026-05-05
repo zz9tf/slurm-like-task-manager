@@ -1,5 +1,6 @@
-# 核心依赖
+# Core
 psutil>=5.8.0
+nvitop>=1.5.0
 
 # Gmail API支持
 google-auth>=2.0.0

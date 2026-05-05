@@ -5,8 +5,18 @@ Resource Monitoring Module
 """
 
 import psutil
+import shutil
 import subprocess
-from typing import Dict, Any, Optional
+import sys
+from typing import Dict, Any, List, Optional
+
+
+def _nvitop_executable_prefix() -> List[str]:
+    """Resolve argv prefix to invoke nvitop (CLI on PATH or python -m nvitop)."""
+    exe = shutil.which('nvitop')
+    if exe:
+        return [exe]
+    return [sys.executable, '-m', 'nvitop']
 
 
 class ResourceMonitor:
@@ -14,49 +24,61 @@ class ResourceMonitor:
     
     def __init__(self):
         pass
+
+    @classmethod
+    def nvitop_exec_argv(cls, user_args: List[str]) -> List[str]:
+        """Build full argv for exec/spawn: nvitop plus optional user arguments."""
+        return _nvitop_executable_prefix() + user_args
+
+    def nvitop_once(self, extra_args: Optional[List[str]] = None) -> str:
+        """Run nvitop --once and return stdout (GPU/CPU/process snapshot)."""
+        cmd = self.nvitop_exec_argv(['--once'] + (extra_args or []))
+        completed = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=True,
+        )
+        return completed.stdout
     
     def get_system_resources(self) -> Dict[str, Any]:
         """Get system resource information"""
-        try:
-            # CPU information
-            cpu_percent = psutil.cpu_percent(interval=1)
-            cpu_count = psutil.cpu_count()
-            
-            # Memory information
-            memory = psutil.virtual_memory()
-            memory_info = {
-                'total': memory.total,
-                'available': memory.available,
-                'percent': memory.percent,
-                'used': memory.used,
-                'free': memory.free
-            }
-            
-            # Disk information
-            disk = psutil.disk_usage('/')
-            disk_info = {
-                'total': disk.total,
-                'used': disk.used,
-                'free': disk.free,
-                'percent': (disk.used / disk.total) * 100
-            }
-            
-            # GPU information (if available)
-            gpu_info = self._get_gpu_info()
-            
-            return {
-                'cpu': {
-                    'percent': cpu_percent,
-                    'count': cpu_count
-                },
-                'memory': memory_info,
-                'disk': disk_info,
-                'gpu': gpu_info
-            }
-            
-        except Exception as e:
-            print(f"⚠️ Failed to get system resources: {e}")
-            return {}
+        # CPU information
+        cpu_percent = psutil.cpu_percent(interval=1)
+        cpu_count = psutil.cpu_count()
+        
+        # Memory information
+        memory = psutil.virtual_memory()
+        memory_info = {
+            'total': memory.total,
+            'available': memory.available,
+            'percent': memory.percent,
+            'used': memory.used,
+            'free': memory.free
+        }
+        
+        # Disk information
+        disk = psutil.disk_usage('/')
+        disk_info = {
+            'total': disk.total,
+            'used': disk.used,
+            'free': disk.free,
+            'percent': (disk.used / disk.total) * 100
+        }
+        
+        # GPU information (if available)
+        gpu_info = self._get_gpu_info()
+        
+        return {
+            'cpu': {
+                'percent': cpu_percent,
+                'count': cpu_count
+            },
+            'memory': memory_info,
+            'disk': disk_info,
+            'gpu': gpu_info
+        }
     
     def _get_gpu_info(self) -> Optional[Dict[str, Any]]:
         """Get GPU information"""
@@ -136,13 +158,10 @@ class ResourceMonitor:
         
         return '\n'.join(output)
     
-    def get_task_resources(self, task_id: str) -> Dict[str, Any]:
-        """Get resource usage for specific task"""
-        try:
-            # This would need to be implemented based on specific requirements
-            # For now, return basic system resources
-            return self.get_system_resources()
-        except Exception as e:
-            print(f"⚠️ Failed to get task resources: {e}")
-            return {}
+    def get_task_resources(self, task_id: str, pid: Optional[int] = None) -> str:
+        """nvitop snapshot; task_id reserved for API stability; optional pid filters processes."""
+        extra: List[str] = []
+        if pid is not None:
+            extra.extend(['--pid', str(pid)])
+        return self.nvitop_once(extra)
 

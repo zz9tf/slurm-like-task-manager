@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 
 from .core import TaskManager
 from .config import ConfigManager
+from .monitor import ResourceMonitor
 
 
 def main():
@@ -84,7 +85,7 @@ def show_help():
     print("  logs     view task logs")
     print("  email    email configuration")
     print("  config   configuration management")
-    print("  resources show system resources")
+    print("  resources show GPU/CPU monitor (nvitop)")
     print("")
     print("Examples:")
     print("  task run 'train model' 'python train.py --epochs 100'")
@@ -102,10 +103,10 @@ def show_help():
 
 def show_version():
     """Show version information"""
-    print("Task Manager v1.0.5")
+    print("Task Manager v1.0.6")
     print("A task scheduler and monitor based on tmux")
     print("Author: zheng")
-    print("Build date: 2025-09-10")
+    print("Build date: 2026-05-05")
 
 
 def cmd_run(manager: TaskManager):
@@ -278,8 +279,7 @@ def cmd_list(manager: TaskManager):
     
     if show_resources:
         print("\n" + "=" * 80)
-        resources = manager.resource_monitor.get_system_resources()
-        print(manager.resource_monitor.format_resources(resources))
+        print(manager.resource_monitor.nvitop_once())
 
 
 def cmd_kill(manager: TaskManager):
@@ -660,7 +660,7 @@ def show_list_help():
     print("Usage: task list [options]")
     print("")
     print("Options:")
-    print("  --resources              Show system resource information")
+    print("  --resources              Append nvitop one-shot snapshot (GPU/CPU/processes)")
     print("  --status <status>        Filter tasks by status")
     print("  <status>                 Filter by status (pending, running, completed, failed, killed)")
     print("")
@@ -881,11 +881,9 @@ def cmd_resources(manager: TaskManager):
     if len(sys.argv) > 2 and sys.argv[2] in ['-h', '--help']:
         show_resources_help()
         return
-    try:
-        resources = manager.resource_monitor.get_system_resources()
-        print(manager.resource_monitor.format_resources(resources))
-    except Exception as e:
-        print(f"❌ failed to get system resources: {e}")
+    user_args = sys.argv[2:]
+    argv = ResourceMonitor.nvitop_exec_argv(user_args)
+    os.execvp(argv[0], argv)
 
 
 def show_resources_help():
@@ -894,17 +892,16 @@ def show_resources_help():
     print("=" * 30)
     print("")
     print("Usage:")
-    print("  task resources")
+    print("  task resources [nvitop options...]")
     print("")
     print("Description:")
-    print("  Show current system resource usage including:")
-    print("  - CPU usage percentage")
-    print("  - Memory usage and available")
-    print("  - Disk usage")
-    print("  - Running processes count")
+    print("  Replaces the current process with nvitop (interactive monitor by default).")
+    print("  Extra arguments are passed through to nvitop, e.g. --once for a single snapshot.")
     print("")
     print("Examples:")
     print("  task resources")
+    print("  task resources --once")
+    print("  task resources --monitor compact")
     print("")
 
 
